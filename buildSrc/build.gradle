@@ -1,0 +1,75 @@
+apply plugin: 'groovy'
+apply plugin: 'idea'
+apply plugin: 'maven'
+sourceCompatibility = 1.8
+
+repositories {
+    maven { url 'https://maven.google.com' }
+    jcenter()
+}
+
+configurations {
+    provided
+}
+
+idea {
+    module {
+        scopes.PROVIDED.plus += [configurations.provided]
+    }
+}
+
+sourceSets {
+    main {
+        compileClasspath += configurations.provided
+    }
+}
+
+dependencies {
+    compile gradleApi()
+    compile localGroovy()
+    compile "commons-io:commons-io:2.6"
+    compile 'commons-codec:commons-codec:1.10'
+
+    File localFile = project.rootProject.file('../local.properties')
+    Properties extProperties = new Properties()
+    if (localFile.exists()) {
+        extProperties.load(localFile.newDataInputStream())
+    }
+    def androidGradlePluginVersion = "3.0.1"
+    if (extProperties.containsKey('gradleVersion')) {
+        androidGradlePluginVersion = extProperties.get("gradleVersion") as String
+    }
+    project.logger.error "buildSrc build.gradle androidGradlePluginVersion ${androidGradlePluginVersion}"
+
+    compile "com.android.tools.build:gradle:${androidGradlePluginVersion}"
+
+}
+
+//remove install task compile 'com.android.tools.build:gradle:$androidGradlePluginVersion'
+install {
+    repositories {
+        mavenInstaller {
+            pom {
+                whenConfigured { p ->
+                    p.dependencies = p.dependencies.findAll {
+                        dep -> (dep.groupId != "com.android.tools.build" && dep.artifactId != "gradle")
+                    }
+                }
+            }
+        }
+    }
+}
+//remove uploadArchives task compile 'com.android.tools.build:gradle:$androidGradlePluginVersion'
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            pom {
+                whenConfigured { p ->
+                    p.dependencies = p.dependencies.findAll {
+                        dep -> (dep.groupId != "com.android.tools.build" && dep.artifactId != "gradle")
+                    }
+                }
+            }
+        }
+    }
+}

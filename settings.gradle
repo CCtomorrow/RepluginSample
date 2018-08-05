@@ -1,0 +1,4 @@
+include ':buildSrc'
+include ':user'
+include ':hostapp'
+include ':pluginapp'
